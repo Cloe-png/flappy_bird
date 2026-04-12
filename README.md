@@ -37,5 +37,3 @@ cd C:\wamp64\www\Portfolio2\flappy_bird
 - des skins pour l'oiseau, le décor et les tuyaux
 - un meilleur score sauvegardé
 - un sol qui défile
-
-Le jeu utilise uniquement des formes dessinées en code, donc aucun asset n'est nécessaire.
