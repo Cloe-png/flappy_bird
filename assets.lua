@@ -88,6 +88,63 @@ function loadImageWithTransparency(path, keepBlackOutline)
     return image
 end
 
+-- Charge un son s'il existe, puis applique un volume cohérent.
+function loadSound(path, volume, sourceType)
+    if love.filesystem.getInfo(path) == nil then
+        return nil
+    end
+
+    local ok, source = pcall(love.audio.newSource, path, sourceType or "static")
+    if not ok then
+        return nil
+    end
+
+    source:setVolume(volume or 1)
+    return source
+end
+
+-- Génère un son simple à partir d'une sinusoïde.
+function createToneSound(frequency, duration, volume)
+    local sampleRate = 44100
+    local sampleCount = math.floor(sampleRate * duration)
+    local soundData = love.sound.newSoundData(sampleCount, sampleRate, 16, 1)
+
+    for i = 0, sampleCount - 1 do
+        local time = i / sampleRate
+        local fade = 1 - (i / sampleCount)
+        local sample = math.sin(2 * math.pi * frequency * time) * fade * (volume or 0.25)
+        soundData:setSample(i, sample)
+    end
+
+    return love.audio.newSource(soundData, "static")
+end
+
+-- Génère un petit bruit rétro plus nerveux pour les collisions.
+function createNoiseBurst(duration, volume)
+    local sampleRate = 44100
+    local sampleCount = math.floor(sampleRate * duration)
+    local soundData = love.sound.newSoundData(sampleCount, sampleRate, 16, 1)
+
+    for i = 0, sampleCount - 1 do
+        local fade = 1 - (i / sampleCount)
+        local sample = (love.math.random() * 2 - 1) * fade * (volume or 0.18)
+        soundData:setSample(i, sample)
+    end
+
+    return love.audio.newSource(soundData, "static")
+end
+
+-- Joue un effet sonore en réutilisant sa source.
+function playSound(name)
+    local source = soundEffects[name]
+    if source == nil then
+        return
+    end
+
+    source:stop()
+    source:play()
+end
+
 -- Découpe un spritesheet régulier en frames.
 function buildFrameQuads(image, columns, rows, frameOrder)
     local quads = {}
@@ -366,6 +423,15 @@ function initializeAssets()
     fontUI = love.graphics.newFont(24)
     fontTitle = love.graphics.newFont(42)
     fontScore = love.graphics.newFont(48)
+
+    soundEffects = {
+        coin = loadSound("assets/sound/coin.wav", 0.35),
+        jump = createToneSound(640, 0.09, 0.16),
+        score = createToneSound(880, 0.08, 0.14),
+        hit = createNoiseBurst(0.14, 0.18),
+        gameover = createToneSound(180, 0.34, 0.18),
+        shop = createToneSound(520, 0.10, 0.13)
+    }
 
     -- Oiseaux du joueur.
     for index, skin in ipairs(birdSkins) do

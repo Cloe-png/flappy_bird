@@ -104,6 +104,7 @@ function handleKeypressed(key)
     if state == "playing" then
         if key == "space" then
             bird.speedY = jumpForce
+            playSound("jump")
         elseif key == "p" then
             state = "paused"
         elseif key == "escape" then
@@ -138,6 +139,7 @@ end
 function handleMousepressed(x, y, button)
     if state == "playing" and button == 1 then
         bird.speedY = jumpForce
+        playSound("jump")
     end
 end
 

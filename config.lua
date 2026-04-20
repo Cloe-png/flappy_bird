@@ -354,10 +354,12 @@ function loseLife()
     lives = lives - 1
 
     if lives <= 0 then
+        playSound("gameover")
         finishRun()
         return
     end
 
+    playSound("hit")
     clearRunObjects()
     resetBird()
 end
@@ -443,6 +445,7 @@ function updatePipes(dt)
             pipe.passed = true
             score = score + 1
             coinsRun = coinsRun + 1
+            playSound("score")
 
             if score > bestScore then
                 bestScore = score
@@ -477,6 +480,7 @@ function updateCoins(dt)
 
         if birdHitsCoin(item) then
             coinsRun = coinsRun + 3
+            playSound("coin")
             table.remove(coinsOnMap, i)
         elseif item.x < -50 then
             table.remove(coinsOnMap, i)
@@ -497,6 +501,7 @@ function buyOrSelectBird(index)
 
     if unlockedBirds[index] then
         selectedBird = index
+        playSound("shop")
         saveData()
         return
     end
@@ -505,6 +510,7 @@ function buyOrSelectBird(index)
         coins = coins - item.cost
         unlockedBirds[index] = true
         selectedBird = index
+        playSound("shop")
         saveData()
     end
 end
@@ -518,6 +524,7 @@ function buyOrSelectBackground(index)
 
     if unlockedBackgrounds[index] then
         selectedBackground = index
+        playSound("shop")
         saveData()
         return
     end
@@ -526,6 +533,7 @@ function buyOrSelectBackground(index)
         coins = coins - item.cost
         unlockedBackgrounds[index] = true
         selectedBackground = index
+        playSound("shop")
         saveData()
     end
 end
@@ -548,6 +556,7 @@ function buyOrSelectPipe(index)
 
     if unlockedPipes[index] then
         selectedPipe = index
+        playSound("shop")
         saveData()
         return
     end
@@ -556,6 +565,7 @@ function buyOrSelectPipe(index)
         coins = coins - item.cost
         unlockedPipes[index] = true
         selectedPipe = index
+        playSound("shop")
         saveData()
     end
 end
