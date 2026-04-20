@@ -84,16 +84,18 @@ difficultyOptions = {
 }
 
 birdSkins = {
-    { name = "Oiseau", cost = 0, file = "assets/birds/bird1.png", columns = 2, rows = 2, frameOrder = { 1, 2, 3 } },
-    { name = "Cat", cost = 55, file = "assets/birds/cat.png", columns = 2, rows = 2, frameOrder = { 1, 2, 3, 4 } },
-    { name = "Mario Tanuki", cost = 110, file = "assets/birds/mario_tanuki.png", columns = 2, rows = 2, frameOrder = { 1, 2, 3 } }
+    { key = "bird", name = "Oiseau", cost = 0, file = "assets/birds/bird1.png", columns = 2, rows = 2, frameOrder = { 1, 2, 3 } },
+    { key = "cat", name = "Cat", cost = 55, file = "assets/birds/cat.png", columns = 2, rows = 2, frameOrder = { 1, 2, 3, 4 } },
+    { key = "mario_tanuki", name = "Mario Tanuki", cost = 110, file = "assets/birds/mario_tanuki.png", columns = 2, rows = 2, frameOrder = { 1, 2, 3 } },
+    { key = "nyancat", name = "Nyan Cat", cost = 0, file = "assets/birds/nyancat.png", columns = 2, rows = 2, frameOrder = { 1, 2, 3, 4 }, hidden = true }
 }
 
 backgroundSkins = {
-    { name = "Flappy Bird", cost = 0, file = "assets/background/flappy_bird.jpg" },
-    { name = "Forêt", cost = 70, file = "assets/background/forest.jpg" },
-    { name = "Maison", cost = 120, file = "assets/background/house.jpg" },
-    { name = "Mario", cost = 170, file = "assets/background/mario.jpg" }
+    { key = "flappy", name = "Flappy Bird", cost = 0, file = "assets/background/flappy_bird.jpg" },
+    { key = "forest", name = "Forêt", cost = 70, file = "assets/background/forest.jpg" },
+    { key = "house", name = "Maison", cost = 120, file = "assets/background/house.jpg" },
+    { key = "mario", name = "Mario", cost = 170, file = "assets/background/mario.jpg" },
+    { key = "nyancat", name = "Nyan Cat", cost = 0, file = "assets/background/Nyancat.jpg", hidden = true }
 }
 
 pipeSkins = {}
@@ -105,6 +107,8 @@ unlockedPipes = { [1] = true }
 selectedBird = 1
 selectedBackground = 1
 selectedPipe = 1
+nyanBackgroundIndex = nil
+specialBirdIndex = nil
 
 -- -------------------------------------------------------------------
 -- SAUVEGARDE
@@ -251,6 +255,45 @@ function syncSpecialUnlocks()
     end
 end
 
+-- Le mode rainbow s'active entre 100 et 110 points inclus.
+function isRainbowModeActive()
+    return score >= 100 and score <= 110
+end
+
+-- Recherche l'index d'un décor à partir de sa clé.
+function findBackgroundIndexByKey(targetKey)
+    for index, background in ipairs(backgroundSkins) do
+        if background.key == targetKey then
+            return index
+        end
+    end
+
+    return nil
+end
+
+-- Retourne l'oiseau réellement affiché.
+-- Entre 100 et 110 points, Nyan Cat remplace temporairement l'oiseau choisi.
+function getActiveBirdIndex()
+    if isRainbowModeActive() and specialBirdIndex ~= nil then
+        return specialBirdIndex
+    end
+
+    return selectedBird
+end
+
+-- Retourne le décor réellement affiché.
+function getActiveBackgroundIndex()
+    if isRainbowModeActive() then
+        local rainbowBackgroundIndex = nyanBackgroundIndex or findBackgroundIndexByKey("nyancat")
+
+        if rainbowBackgroundIndex ~= nil and backgroundSprites[rainbowBackgroundIndex] ~= nil then
+            return rainbowBackgroundIndex
+        end
+    end
+
+    return selectedBackground
+end
+
 -- -------------------------------------------------------------------
 -- ÉTAT DE PARTIE
 -- -------------------------------------------------------------------
@@ -383,10 +426,26 @@ function spawnPipe()
     table.insert(pipes, pipe)
 end
 
+-- Place une pièce assez loin devant les tuyaux pour éviter les chevauchements.
+function getCoinSpawnX()
+    local spawnX = WINDOW_WIDTH + 220
+
+    for i = 1, #pipes do
+        local pipe = pipes[i]
+        local pipeEndX = pipe.x + pipeWidth
+
+        if pipeEndX + 90 > spawnX then
+            spawnX = pipeEndX + 90
+        end
+    end
+
+    return spawnX
+end
+
 -- Crée une pièce à ramasser.
 function spawnCoin()
     local item = {}
-    item.x = WINDOW_WIDTH + 40
+    item.x = getCoinSpawnX()
     item.y = love.math.random(120, GROUND_Y - 120)
     item.size = 16
     table.insert(coinsOnMap, item)
@@ -573,7 +632,7 @@ end
 -- Choisit le skin de tuyau réellement affiché.
 -- À 100 points, le rainbow prend automatiquement la main.
 function getActivePipeIndex()
-    if rainbowPipeIndex ~= nil and score >= 100 then
+    if rainbowPipeIndex ~= nil and isRainbowModeActive() then
         return rainbowPipeIndex
     end
 

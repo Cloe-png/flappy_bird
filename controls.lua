@@ -145,7 +145,7 @@ end
 
 -- Anime les sprites de l'oiseau.
 function updateBirdAnimation(dt)
-    local currentBirdData = birdSpriteData[selectedBird]
+    local currentBirdData = birdSpriteData[getActiveBirdIndex()]
     local currentBirdFrames = birdSpriteFrames
 
     if currentBirdData ~= nil then

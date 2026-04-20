@@ -426,7 +426,7 @@ function initializeAssets()
 
     soundEffects = {
         coin = loadSound("assets/sound/coin.wav", 0.35),
-        jump = createToneSound(640, 0.09, 0.16),
+        jump = loadSound("assets/sound/jump.wav", 0.28),
         score = createToneSound(880, 0.08, 0.14),
         hit = createNoiseBurst(0.14, 0.18),
         gameover = createToneSound(180, 0.34, 0.18),
@@ -451,6 +451,10 @@ function initializeAssets()
                 frameWidth = frameWidth,
                 frameHeight = frameHeight
             }
+
+            if skin.key == "nyancat" then
+                specialBirdIndex = index
+            end
         end
     end
 
@@ -475,6 +479,8 @@ function initializeAssets()
         heartEmptyQuad = heartQuads[2]
     end
 
+    nyanBackgroundIndex = nil
+
     -- Images de fond de la partie.
     for index, background in ipairs(backgroundSkins) do
         if background.file and love.filesystem.getInfo(background.file) ~= nil then
@@ -482,6 +488,10 @@ function initializeAssets()
             if ok then
                 image:setFilter("linear", "linear")
                 backgroundSprites[index] = image
+
+                if background.key == "nyancat" then
+                    nyanBackgroundIndex = index
+                end
             end
         end
     end

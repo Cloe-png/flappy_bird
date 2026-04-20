@@ -128,7 +128,13 @@ end
 -- Dessine le fond puis le sol.
 function drawBackground()
     -- On affiche d'abord le decor choisi.
-    local image = backgroundSprites[selectedBackground]
+    local activeBackgroundIndex = selectedBackground
+
+    if isRainbowModeActive() and nyanBackgroundIndex ~= nil and backgroundSprites[nyanBackgroundIndex] ~= nil then
+        activeBackgroundIndex = nyanBackgroundIndex
+    end
+
+    local image = backgroundSprites[activeBackgroundIndex]
 
     if image ~= nil then
         love.graphics.clear(0.42, 0.75, 0.98)
@@ -162,7 +168,7 @@ function drawBird()
     local angle = math.max(-0.35, math.min(0.65, bird.speedY / 420))
     local cx = bird.x + bird.width / 2
     local cy = bird.y + bird.height / 2
-    local image, quad, frameWidth, frameHeight = getBirdSpriteVisual(selectedBird)
+    local image, quad, frameWidth, frameHeight = getBirdSpriteVisual(getActiveBirdIndex())
 
     love.graphics.push()
     love.graphics.translate(cx, cy)
@@ -242,7 +248,6 @@ end
 -- Dessine les informations de HUD pendant la partie.
 function drawGameUI()
     drawSoftPanel(WINDOW_WIDTH - 290, 16, 262, 166, { 1, 1, 1, 0.18 })
-    drawSoftPanel(16, GROUND_Y - 126, 430, 102, { 1, 1, 1, 0.18 })
 
     love.graphics.setFont(fontScore)
     love.graphics.setColor(0, 0, 0, 0.25)
@@ -256,17 +261,12 @@ function drawGameUI()
     love.graphics.print("Pièces : " .. (coins + coinsRun), WINDOW_WIDTH - 270, 70)
     love.graphics.print("Mode : " .. getDifficultyLabel(difficultyMode), WINDOW_WIDTH - 270, 106)
 
-    love.graphics.setFont(fontSmall)
-    love.graphics.print("Poids : " .. math.floor(gravity), WINDOW_WIDTH - 270, 140)
-
     love.graphics.setFont(fontUI)
-    drawLivesAt(34, GROUND_Y - 84)
+    drawLivesAt(18, GROUND_Y - 66)
 
     love.graphics.setFont(fontSmall)
     love.graphics.setColor(1, 1, 1)
-    love.graphics.print("Vitesse : " .. math.floor(pipeSpeed), 176, GROUND_Y - 94)
-    love.graphics.print("Espace tuyaux : " .. math.floor(pipeGap), 176, GROUND_Y - 68)
-    love.graphics.print("P = pause", 176, GROUND_Y - 42)
+    love.graphics.print("P : pause", 24, 22)
 end
 
 -- Ecran principal d'une partie en cours.
@@ -460,50 +460,81 @@ function getShopStatus(item, unlocked, selected)
     return "À vendre", tostring(item.cost) .. " pièces"
 end
 
+function getShopShortcutLabel(item)
+    if item.key == "rainbow" then
+        return "SPECIAL"
+    end
+
+    return "TOUCHE " .. tostring(item.shopIndex)
+end
+
+function getShopFooterLabel(item, unlocked, selected)
+    if item.key == "rainbow" then
+        return "Auto 100 pts"
+    elseif selected then
+        return "Equipe"
+    elseif unlocked then
+        return "Choisir"
+    end
+
+    return tostring(item.cost) .. " pieces"
+end
+
 -- Dessine une carte produit.
 function drawShopCard(category, index, item, unlocked, selected, x, y, w, h)
     local accentR, accentG, accentB = getShopAccent(category)
     local statusTitle, statusText = getShopStatus(item, unlocked, selected)
+    local footerLabel = getShopFooterLabel(item, unlocked, selected)
+    local shortcutLabel = getShopShortcutLabel(item)
 
-    love.graphics.setColor(0, 0, 0, 0.20)
-    love.graphics.rectangle("fill", x + 7, y + 8, w, h, 18, 18)
+    love.graphics.setColor(0, 0, 0, 0.22)
+    love.graphics.rectangle("fill", x + 8, y + 10, w, h, 20, 20)
 
-    love.graphics.setColor(0.13, 0.09, 0.06, 0.98)
-    love.graphics.rectangle("fill", x, y, w, h, 18, 18)
-    love.graphics.setColor(0.50, 0.33, 0.18, 0.95)
-    love.graphics.rectangle("line", x, y, w, h, 18, 18)
+    if selected then
+        love.graphics.setColor(accentR, accentG, accentB, 0.16)
+        love.graphics.rectangle("fill", x - 3, y - 3, w + 6, h + 6, 22, 22)
+    end
 
-    love.graphics.setColor(accentR * 0.16, accentG * 0.16, accentB * 0.16, 1)
-    love.graphics.rectangle("fill", x + 8, y + 16, w - 16, 34, 12, 12)
-    love.graphics.setColor(0.36, 0.22, 0.12, 0.96)
-    love.graphics.rectangle("fill", x + 8, y + 56, w - 16, 78, 12, 12)
+    love.graphics.setColor(0.11, 0.08, 0.06, 0.98)
+    love.graphics.rectangle("fill", x, y, w, h, 20, 20)
+    love.graphics.setColor(0.33, 0.22, 0.14, 0.98)
+    love.graphics.rectangle("fill", x + 10, y + 58, w - 20, h - 118, 16, 16)
+    love.graphics.setColor(0.55, 0.38, 0.22, 0.95)
+    love.graphics.rectangle("line", x, y, w, h, 20, 20)
+
+    love.graphics.setColor(accentR * 0.18, accentG * 0.18, accentB * 0.18, 1)
+    love.graphics.rectangle("fill", x + 10, y + 14, w - 20, 36, 12, 12)
+    love.graphics.setColor(accentR * 0.30, accentG * 0.30, accentB * 0.30, 1)
+    love.graphics.rectangle("fill", x + 10, y + h - 46, w - 20, 28, 10, 10)
 
     if selected then
         love.graphics.setColor(accentR, accentG, accentB, 0.95)
-        love.graphics.rectangle("line", x + 1, y + 1, w - 2, h - 2, 18, 18)
+        love.graphics.rectangle("line", x + 1, y + 1, w - 2, h - 2, 20, 20)
     end
 
     love.graphics.setFont(fontSmall)
     love.graphics.setColor(1, 0.96, 0.88)
-    love.graphics.printf("ARTICLE " .. index, x + 8, y + 27, w - 16, "center")
+    love.graphics.printf(shortcutLabel, x + 8, y + 27, w - 16, "center")
 
     -- La miniature depend de ce qu'on vend.
     if category == "bird" then
-        drawBirdPreview(index, x + (w - 44) / 2, y + 80)
+        drawBirdPreview(index, x + (w - 44) / 2, y + 84)
     elseif category == "background" then
-        drawBackgroundPreview(index, x + (w - 88) / 2, y + 68, 88, 58)
+        drawBackgroundPreview(index, x + (w - 94) / 2, y + 76, 94, 60)
     else
-        drawPipePreview(index, x + (w - 64) / 2, y + 60)
+        drawPipePreview(index, x + (w - 64) / 2, y + 70)
     end
 
+    love.graphics.setFont(fontUI)
     love.graphics.setColor(1, 1, 1)
     love.graphics.printf(item.name, x + 12, y + 146, w - 24, "center")
 
+    love.graphics.setFont(fontSmall)
     love.graphics.setColor(0.95, 0.83, 0.64)
-    love.graphics.printf(statusTitle, x + 12, y + 172, w - 24, "center")
+    love.graphics.printf(statusTitle, x + 12, y + 180, w - 24, "center")
 
     love.graphics.setColor(0.84, 0.88, 0.93)
-    love.graphics.printf(statusText, x + 12, y + 194, w - 24, "center")
+    love.graphics.printf(statusText, x + 12, y + 200, w - 24, "center")
 
     -- Couleur du bouton du bas.
     local tagR, tagG, tagB = 0.92, 0.77, 0.34
@@ -516,11 +547,11 @@ function drawShopCard(category, index, item, unlocked, selected, x, y, w, h)
     end
 
     love.graphics.setColor(tagR, tagG, tagB, 1)
-    love.graphics.rectangle("fill", x + 20, y + h - 38, w - 40, 24, 8, 8)
+    love.graphics.rectangle("fill", x + 18, y + h - 42, w - 36, 26, 10, 10)
 
     love.graphics.setColor(0.12, 0.09, 0.06, 0.98)
-    if item.key == "rainbow" then
-        love.graphics.printf("Auto 100 pts", x + 22, y + h - 33, w - 44, "center")
+    if true then
+        love.graphics.printf(footerLabel, x + 22, y + h - 36, w - 44, "center")
     elseif selected then
         love.graphics.printf("Equipe", x + 22, y + h - 33, w - 44, "center")
     elseif unlocked then
@@ -573,12 +604,12 @@ function drawShop()
 
     -- Grande facade de boutique.
     local panelWidth = 1180
-    local panelHeight = 380
+    local panelHeight = 400
     local panelX = (WINDOW_WIDTH - panelWidth) / 2
     local panelY = WINDOW_HEIGHT * 0.22
-    local cardW = 170
-    local cardH = 250
-    local cardGap = 20
+    local cardW = 178
+    local cardH = 264
+    local cardGap = 18
     local awningY = panelY - 34
 
     love.graphics.setFont(fontTitle)
@@ -607,18 +638,18 @@ function drawShop()
     love.graphics.rectangle("line", panelX, panelY, panelWidth, panelHeight, 20, 20)
 
     love.graphics.setColor(0.87, 0.72, 0.49, 1)
-    love.graphics.rectangle("fill", panelX + 26, panelY + 20, 250, 40, 12, 12)
+    love.graphics.rectangle("fill", panelX + 24, panelY + 18, 254, 44, 12, 12)
     love.graphics.setColor(0.17, 0.10, 0.06, 1)
     love.graphics.setFont(fontUI)
-    love.graphics.printf("Caisse : " .. coins .. " pièces", panelX + 36, panelY + 30, 230, "center")
+    love.graphics.printf("Caisse : " .. coins .. " pièces", panelX + 34, panelY + 30, 234, "center")
 
     love.graphics.setColor(0.96, 0.90, 0.76)
     love.graphics.setFont(fontSmall)
-    love.graphics.print("Tab change le rayon", panelX + 306, panelY + 24)
-    love.graphics.print("1 à 9 pour acheter ou équiper", panelX + 306, panelY + 46)
+    love.graphics.print("Tab : changer de rayon", panelX + 304, panelY + 24)
+    love.graphics.print("1 a 9 : acheter ou equiper", panelX + 304, panelY + 46)
 
     love.graphics.setColor(0.23, 0.14, 0.09, 0.98)
-    love.graphics.rectangle("fill", panelX + 730, panelY + 18, 424, 46, 14, 14)
+    love.graphics.rectangle("fill", panelX + 706, panelY + 18, 448, 46, 14, 14)
 
     -- Les onglets de la boutique.
     local categories = {
@@ -627,10 +658,10 @@ function drawShop()
         { label = "Tuyaux", key = "pipe" }
     }
 
-    local tabX = panelX + 744
+    local tabX = panelX + 720
     for i = 1, #categories do
         local item = categories[i]
-        local tabWidth = 126
+        local tabWidth = 138
 
         if shopSection == item.key then
             local accentR, accentG, accentB = getShopAccent(item.key)
@@ -644,7 +675,7 @@ function drawShop()
         end
 
         love.graphics.printf(item.label, tabX, panelY + 34, tabWidth, "center")
-        tabX = tabX + 132
+        tabX = tabX + 144
     end
 
     -- Données du rayon actuellement sélectionné.
@@ -656,9 +687,13 @@ function drawShop()
 
     love.graphics.setFont(fontUI)
     love.graphics.setColor(0.96, 0.90, 0.76)
-    love.graphics.printf("Rayon : " .. activeTitle, panelX, panelY + 78, panelWidth, "center")
+    love.graphics.printf("Rayon : " .. activeTitle, panelX, panelY + 82, panelWidth, "center")
 
-    drawShopShelf(shopSection, activeList, activeUnlocked, activeSelected, rowX, panelY + 108, cardW, cardH, cardGap)
+    love.graphics.setFont(fontSmall)
+    love.graphics.setColor(0.82, 0.87, 0.94)
+    love.graphics.printf("Les cartes brillantes sont deja equipees ou disponibles immediatement.", panelX, panelY + 112, panelWidth, "center")
+
+    drawShopShelf(shopSection, activeList, activeUnlocked, activeSelected, rowX, panelY + 128, cardW, cardH, cardGap)
 end
 
 -- -------------------------------------------------------------------
