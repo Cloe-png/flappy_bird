@@ -197,6 +197,7 @@ function updateGame(dt)
     updateBirdAnimation(dt)
     updateCoinAnimation(dt)
     updateClouds(dt)
+    updateRainbowMusic()
 
     -- Si on n'est pas dans une partie, on arrete ici.
     if state ~= "playing" then

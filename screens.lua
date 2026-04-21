@@ -85,11 +85,24 @@ end
 -- PREVIEWS DE BOUTIQUE
 -- -------------------------------------------------------------------
 
+function getBirdScaleMultiplier(index, isPreview)
+    local skin = birdSkins[index]
+    if skin == nil then
+        return 1
+    end
+
+    if isPreview then
+        return skin.previewScale or skin.drawScale or 1
+    end
+
+    return skin.drawScale or 1
+end
+
 function drawBirdPreview(index, x, y)
     local image, quad, frameWidth, frameHeight = getBirdSpriteVisual(index)
 
     if image ~= nil then
-        local scale = math.min(44 / frameWidth, 32 / frameHeight)
+        local scale = math.min(44 / frameWidth, 32 / frameHeight) * getBirdScaleMultiplier(index, true)
         drawSprite(image, quad, x + 22, y + 16, 0, scale, scale, frameWidth / 2, frameHeight / 2)
         return
     end
@@ -127,13 +140,8 @@ end
 
 -- Dessine le fond puis le sol.
 function drawBackground()
-    -- On affiche d'abord le decor choisi.
-    local activeBackgroundIndex = selectedBackground
-
-    if isRainbowModeActive() and nyanBackgroundIndex ~= nil and backgroundSprites[nyanBackgroundIndex] ~= nil then
-        activeBackgroundIndex = nyanBackgroundIndex
-    end
-
+    -- On affiche d'abord le décor choisi.
+    local activeBackgroundIndex = getActiveBackgroundIndex()
     local image = backgroundSprites[activeBackgroundIndex]
 
     if image ~= nil then
@@ -168,14 +176,15 @@ function drawBird()
     local angle = math.max(-0.35, math.min(0.65, bird.speedY / 420))
     local cx = bird.x + bird.width / 2
     local cy = bird.y + bird.height / 2
-    local image, quad, frameWidth, frameHeight = getBirdSpriteVisual(getActiveBirdIndex())
+    local activeBirdIndex = getActiveBirdIndex()
+    local image, quad, frameWidth, frameHeight = getBirdSpriteVisual(activeBirdIndex)
 
     love.graphics.push()
     love.graphics.translate(cx, cy)
     love.graphics.rotate(angle)
 
     if image ~= nil then
-        local scale = math.min(bird.width / frameWidth, bird.height / frameHeight)
+        local scale = math.min(bird.width / frameWidth, bird.height / frameHeight) * getBirdScaleMultiplier(activeBirdIndex, false)
         drawSprite(image, quad, 0, 0, 0, scale, scale, frameWidth / 2, frameHeight / 2)
         love.graphics.pop()
         return

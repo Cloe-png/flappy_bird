@@ -145,6 +145,29 @@ function playSound(name)
     source:play()
 end
 
+function stopRainbowMusic()
+    if rainbowMusic ~= nil then
+        rainbowMusic:stop()
+    end
+end
+
+function updateRainbowMusic()
+    if rainbowMusic == nil then
+        return
+    end
+
+    if isRainbowPresentationActive() then
+        if not rainbowMusic:isPlaying() then
+            rainbowMusic:play()
+        end
+        return
+    end
+
+    if rainbowMusic:isPlaying() then
+        rainbowMusic:stop()
+    end
+end
+
 -- Découpe un spritesheet régulier en frames.
 function buildFrameQuads(image, columns, rows, frameOrder)
     local quads = {}
@@ -432,6 +455,10 @@ function initializeAssets()
         gameover = createToneSound(180, 0.34, 0.18),
         shop = createToneSound(520, 0.10, 0.13)
     }
+    rainbowMusic = loadSound("assets/sound/NyanCat.mp3", 0.42, "stream")
+    if rainbowMusic ~= nil then
+        rainbowMusic:setLooping(true)
+    end
 
     -- Oiseaux du joueur.
     for index, skin in ipairs(birdSkins) do
@@ -495,6 +522,8 @@ function initializeAssets()
             end
         end
     end
+
+    stopRainbowMusic()
 
     -- Métadonnées de boutique pour les tuyaux.
     local pipeMeta = {

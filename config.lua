@@ -84,10 +84,10 @@ difficultyOptions = {
 }
 
 birdSkins = {
-    { key = "bird", name = "Oiseau", cost = 0, file = "assets/birds/bird1.png", columns = 2, rows = 2, frameOrder = { 1, 2, 3 } },
-    { key = "cat", name = "Cat", cost = 55, file = "assets/birds/cat.png", columns = 2, rows = 2, frameOrder = { 1, 2, 3, 4 } },
-    { key = "mario_tanuki", name = "Mario Tanuki", cost = 110, file = "assets/birds/mario_tanuki.png", columns = 2, rows = 2, frameOrder = { 1, 2, 3 } },
-    { key = "nyancat", name = "Nyan Cat", cost = 0, file = "assets/birds/nyancat.png", columns = 2, rows = 2, frameOrder = { 1, 2, 3, 4 }, hidden = true }
+    { key = "bird", name = "Oiseau", cost = 0, file = "assets/birds/bird1.png", columns = 2, rows = 2, frameOrder = { 1, 2, 3 }, drawScale = 1.0, previewScale = 1.0 },
+    { key = "cat", name = "Cat", cost = 55, file = "assets/birds/cat.png", columns = 2, rows = 2, frameOrder = { 1, 2, 3, 4 }, drawScale = 1.0, previewScale = 1.0 },
+    { key = "mario_tanuki", name = "Mario Tanuki", cost = 110, file = "assets/birds/mario_tanuki.png", columns = 2, rows = 2, frameOrder = { 1, 2, 3 }, drawScale = 1.0, previewScale = 1.0 },
+    { key = "nyancat", name = "Nyan Cat", cost = 0, file = "assets/birds/nyancat.png", columns = 2, rows = 2, frameOrder = { 1, 2, 3 }, hidden = true, drawScale = 1.35, previewScale = 1.18 }
 }
 
 backgroundSkins = {
@@ -95,7 +95,7 @@ backgroundSkins = {
     { key = "forest", name = "Forêt", cost = 70, file = "assets/background/forest.jpg" },
     { key = "house", name = "Maison", cost = 120, file = "assets/background/house.jpg" },
     { key = "mario", name = "Mario", cost = 170, file = "assets/background/mario.jpg" },
-    { key = "nyancat", name = "Nyan Cat", cost = 0, file = "assets/background/Nyancat.jpg", hidden = true }
+    { key = "nyancat", name = "Nyan Cat", cost = 0, file = "assets/background/Nyancat.png", hidden = true }
 }
 
 pipeSkins = {}
@@ -260,6 +260,16 @@ function isRainbowModeActive()
     return score >= 100 and score <= 110
 end
 
+-- Le rendu special reste visible uniquement pendant une partie,
+-- une pause ou l'ecran de game over correspondant.
+function isRainbowPresentationActive()
+    if not isRainbowModeActive() then
+        return false
+    end
+
+    return state == "playing" or state == "paused" or state == "gameover"
+end
+
 -- Recherche l'index d'un décor à partir de sa clé.
 function findBackgroundIndexByKey(targetKey)
     for index, background in ipairs(backgroundSkins) do
@@ -274,7 +284,7 @@ end
 -- Retourne l'oiseau réellement affiché.
 -- Entre 100 et 110 points, Nyan Cat remplace temporairement l'oiseau choisi.
 function getActiveBirdIndex()
-    if isRainbowModeActive() and specialBirdIndex ~= nil then
+    if isRainbowPresentationActive() and specialBirdIndex ~= nil then
         return specialBirdIndex
     end
 
@@ -283,7 +293,7 @@ end
 
 -- Retourne le décor réellement affiché.
 function getActiveBackgroundIndex()
-    if isRainbowModeActive() then
+    if isRainbowPresentationActive() then
         local rainbowBackgroundIndex = nyanBackgroundIndex or findBackgroundIndexByKey("nyancat")
 
         if rainbowBackgroundIndex ~= nil and backgroundSprites[rainbowBackgroundIndex] ~= nil then
@@ -632,7 +642,7 @@ end
 -- Choisit le skin de tuyau réellement affiché.
 -- À 100 points, le rainbow prend automatiquement la main.
 function getActivePipeIndex()
-    if rainbowPipeIndex ~= nil and isRainbowModeActive() then
+    if rainbowPipeIndex ~= nil and isRainbowPresentationActive() then
         return rainbowPipeIndex
     end
 
