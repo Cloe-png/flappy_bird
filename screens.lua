@@ -254,9 +254,44 @@ function drawLivesAt(startX, startY)
     end
 end
 
+function drawCoinCounter()
+    local panelX = 18
+    local panelY = 16
+    local panelWidth = 152
+    local panelHeight = 52
+    local iconX = panelX + 18
+    local iconY = panelY + 11
+    local activeQuad = coinSpriteFrames[coinSpriteFrameIndex] or coinSpriteFrames[1]
+
+    drawSoftPanel(panelX, panelY, panelWidth, panelHeight, { 1, 0.86, 0.25, 0.28 })
+
+    if coinSprite ~= nil and activeQuad ~= nil then
+        local scale = math.min(28 / coinFrameWidth, 28 / coinFrameHeight)
+        love.graphics.setColor(1, 1, 1)
+        love.graphics.draw(coinSprite, activeQuad, iconX, iconY, 0, scale, scale)
+    else
+        love.graphics.setColor(1, 0.88, 0.20)
+        love.graphics.circle("fill", iconX + 14, iconY + 14, 14)
+    end
+
+    love.graphics.setFont(fontUI)
+    love.graphics.setColor(0, 0, 0, 0.22)
+    love.graphics.print("x " .. tostring(coins + coinsRun), panelX + 58, panelY + 15)
+    love.graphics.setColor(1, 1, 1)
+    love.graphics.print("x " .. tostring(coins + coinsRun), panelX + 56, panelY + 13)
+end
+
+function drawPauseHint()
+    love.graphics.setFont(fontSmall)
+    love.graphics.setColor(1, 1, 1)
+    love.graphics.print("P : pause", 24, 76)
+end
+
 -- Dessine les informations de HUD pendant la partie.
 function drawGameUI()
-    drawSoftPanel(WINDOW_WIDTH - 290, 16, 262, 166, { 1, 1, 1, 0.18 })
+    drawSoftPanel(WINDOW_WIDTH - 290, 16, 262, 130, { 1, 1, 1, 0.18 })
+    drawCoinCounter()
+    drawPauseHint()
 
     love.graphics.setFont(fontScore)
     love.graphics.setColor(0, 0, 0, 0.25)
@@ -266,16 +301,11 @@ function drawGameUI()
 
     love.graphics.setFont(fontUI)
     love.graphics.setColor(1, 1, 1)
-    love.graphics.print("Meilleur : " .. bestScore, WINDOW_WIDTH - 270, 34)
-    love.graphics.print("Pièces : " .. (coins + coinsRun), WINDOW_WIDTH - 270, 70)
-    love.graphics.print("Mode : " .. getDifficultyLabel(difficultyMode), WINDOW_WIDTH - 270, 106)
+    love.graphics.print("Meilleur : " .. getBestScore(difficultyMode), WINDOW_WIDTH - 270, 34)
+    love.graphics.print("Mode : " .. getDifficultyLabel(difficultyMode), WINDOW_WIDTH - 270, 76)
 
     love.graphics.setFont(fontUI)
     drawLivesAt(18, GROUND_Y - 66)
-
-    love.graphics.setFont(fontSmall)
-    love.graphics.setColor(1, 1, 1)
-    love.graphics.print("P : pause", 24, 22)
 end
 
 -- Ecran principal d'une partie en cours.
@@ -359,7 +389,11 @@ function drawMenu()
     love.graphics.setFont(fontSmall)
     love.graphics.setColor(1, 1, 1)
     love.graphics.printf("Haut / Bas pour choisir - Entrée pour valider", 0, footerY, WINDOW_WIDTH, "center")
-    love.graphics.printf("Meilleur score : " .. bestScore .. "   Pièces : " .. coins, 0, footerY + 24, WINDOW_WIDTH, "center")
+    local footerText = "Facile : " .. getBestScore("easy")
+        .. "   Moyen : " .. getBestScore("normal")
+        .. "   Difficile : " .. getBestScore("hard")
+        .. "   Pièces : " .. coins
+    love.graphics.printf(footerText, 0, footerY + 24, WINDOW_WIDTH, "center")
 end
 
 function drawDifficultyMenu()
@@ -402,6 +436,10 @@ function drawDifficultyMenu()
         end
 
         love.graphics.print(item.label, cardX + 18, cardY + 8)
+
+        love.graphics.setFont(fontSmall)
+        love.graphics.setColor(0.84, 0.90, 0.98)
+        love.graphics.print("Meilleur score : " .. getBestScore(item.key), cardX + 18, cardY + 31)
     end
 
     love.graphics.setFont(fontSmall)
@@ -451,7 +489,7 @@ end
 function getShopStatus(item, unlocked, selected)
     -- Le rainbow n'est jamais achete manuellement.
     if item.key == "rainbow" then
-        if bestScore >= 100 then
+        if getGlobalBestScore() >= 100 then
             return "Spécial", "S'active automatiquement à 100 points"
         end
 
@@ -740,7 +778,7 @@ function drawGameOver()
 
     local cards = {
         { title = "Score final", value = tostring(score), x = boxX + 34 },
-        { title = "Meilleur score", value = tostring(bestScore), x = boxX + 218 },
+        { title = "Meilleur score", value = tostring(getBestScore(difficultyMode)), x = boxX + 218 },
         { title = "Pièces gagnées", value = tostring(coinsRun), x = boxX + 402 },
         { title = "Mode", value = getDifficultyLabel(difficultyMode), x = boxX + 586 }
     }
@@ -759,7 +797,7 @@ function drawGameOver()
     local rainbowText = "Le tuyau rainbow s'active automatiquement à 100 points."
     if score >= 100 then
         rainbowText = "Le tuyau rainbow s'est activé pendant cette partie."
-    elseif bestScore >= 100 then
+    elseif getGlobalBestScore() >= 100 then
         rainbowText = "Tu as déjà atteint 100 points au moins une fois."
     end
 

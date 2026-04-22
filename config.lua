@@ -19,6 +19,11 @@ coinsOnMap = {}
 -- Progression de la partie et progression sauvegardée.
 score = 0
 bestScore = 0
+bestScores = {
+    easy = 0,
+    normal = 0,
+    hard = 0
+}
 coins = 0
 coinsRun = 0
 lives = 3
@@ -143,10 +148,41 @@ function parseList(text)
     return result
 end
 
+function getBestScore(mode)
+    if mode ~= nil and bestScores[mode] ~= nil then
+        return bestScores[mode]
+    end
+
+    return 0
+end
+
+function getGlobalBestScore()
+    local globalBest = 0
+
+    for i = 1, #difficultyOptions do
+        local mode = difficultyOptions[i].key
+        local modeBest = getBestScore(mode)
+
+        if modeBest > globalBest then
+            globalBest = modeBest
+        end
+    end
+
+    return globalBest
+end
+
+function syncLegacyBestScore()
+    bestScore = getGlobalBestScore()
+end
+
 -- Ecrit la progression du joueur dans save.txt.
 function saveData()
     local lines = {
-        "bestScore=" .. bestScore,
+        "bestScores=" .. table.concat({
+            tostring(getBestScore("easy")),
+            tostring(getBestScore("normal")),
+            tostring(getBestScore("hard"))
+        }, ","),
         "coins=" .. coins,
         "selectedBird=" .. selectedBird,
         "selectedBackground=" .. selectedBackground,
@@ -166,12 +202,18 @@ function loadData()
     end
 
     local content = love.filesystem.read("save.txt")
+    local legacyBestScore = nil
 
     for line in string.gmatch(content, "[^\r\n]+") do
         local key, value = string.match(line, "([^=]+)=(.+)")
 
         if key == "bestScore" then
-            bestScore = tonumber(value) or 0
+            legacyBestScore = tonumber(value) or 0
+        elseif key == "bestScores" then
+            local easy, normal, hard = string.match(value, "([^,]*),([^,]*),([^,]*)")
+            bestScores.easy = tonumber(easy) or 0
+            bestScores.normal = tonumber(normal) or 0
+            bestScores.hard = tonumber(hard) or 0
         elseif key == "coins" then
             coins = tonumber(value) or 0
         elseif key == "selectedBird" then
@@ -197,6 +239,12 @@ function loadData()
             end
         end
     end
+
+    if legacyBestScore ~= nil and getGlobalBestScore() == 0 then
+        bestScores.normal = legacyBestScore
+    end
+
+    syncLegacyBestScore()
 end
 
 -- Corrige les sélections si la sauvegarde contient des index invalides.
@@ -221,6 +269,9 @@ end
 -- Remet toute la progression à zéro.
 function resetProgress()
     bestScore = 0
+    bestScores.easy = 0
+    bestScores.normal = 0
+    bestScores.hard = 0
     coins = 0
     coinsRun = 0
 
@@ -244,8 +295,10 @@ end
 
 -- Débloque les contenus liés au score global.
 function syncSpecialUnlocks()
+    local globalBestScore = getGlobalBestScore()
+
     for index, item in ipairs(pipeSkins) do
-        if item.unlockScore ~= nil and bestScore >= item.unlockScore then
+        if item.unlockScore ~= nil and globalBestScore >= item.unlockScore then
             unlockedPipes[index] = true
 
             if item.key == "rainbow" then
@@ -392,10 +445,11 @@ end
 
 -- Termine la partie et persiste les gains.
 function finishRun()
-    if score > bestScore then
-        bestScore = score
+    if score > getBestScore(difficultyMode) then
+        bestScores[difficultyMode] = score
     end
 
+    syncLegacyBestScore()
     coins = coins + coinsRun
     syncSpecialUnlocks()
     saveData()
@@ -516,8 +570,9 @@ function updatePipes(dt)
             coinsRun = coinsRun + 1
             playSound("score")
 
-            if score > bestScore then
-                bestScore = score
+            if score > getBestScore(difficultyMode) then
+                bestScores[difficultyMode] = score
+                syncLegacyBestScore()
                 syncSpecialUnlocks()
             end
         end
@@ -619,7 +674,7 @@ function buyOrSelectPipe(index)
         return
     end
 
-    if item.unlockScore ~= nil and bestScore < item.unlockScore then
+    if item.unlockScore ~= nil and getGlobalBestScore() < item.unlockScore then
         return
     end
 
