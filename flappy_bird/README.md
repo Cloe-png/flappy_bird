@@ -1,55 +1,155 @@
-# Flappy Bird en Lua
+# Flappy Bird
 
-Version simple pour débuter avec `Lua` et `LOVE2D`.
+Projet de jeu 2D realise en `Lua` avec `LOVE2D`, inspire du principe de Flappy Bird et enrichi avec une boutique, plusieurs difficultés, des skins a débloquer et une sauvegarde de progression.
 
-## Lancement
+## Apercu
 
-1. Installer `LOVE2D` version 11.x : https://love2d.org/
-2. Ouvrir un terminal dans `flappy_bird`
-3. Lancer :
+Le joueur contrôle un oiseau qui doit traverser des series de tuyaux sans les toucher. Chaque passage reussi augmente le score. Pendant la partie, il est possible de récuperer des pièces pour acheter des contenus cosmetiques dans la boutique, ainsi que des bonus de soin quand la situation devient critique.
+
+Le projet a été pensé comme un jeu complet en local :
+
+- menu principal interactif
+- séléction de difficulté avant chaque partie
+- trois vies par run
+- système de pièces a collecter
+- boutique avec équipement et achats
+- sauvegarde automatique des scores et de la progression
+- skins d'oiseaux, de fonds et de tuyaux
+- mode spécial lié au score
+
+## Fonctionnalites
+
+### Gameplay
+
+- contrôle simple avec saut au clavier ou a la souris
+- collision avec le plafond, le sol et les tuyaux
+- score qui augmente a chaque tuyau depassé
+- difficulté dynamique pendant une run : vitesse, gravité et écart des tuyaux évoluent
+- trois niveaux de difficulté :
+  - `Facile`
+  - `Moyen`
+  - `Difficile`
+
+### Vies et objets
+
+- le joueur commence avec `3 vies`
+- des pièces apparaissent régulierement pendant la partie
+- les pièces existent en plusieurs valeurs :
+  - bronze
+  - argent
+  - or
+- quand il ne reste qu'une vie, un objet de soin peut apparaitre pour récuperer de la marge
+
+### Progression et boutique
+
+- les pièces gagnées pendant une partie sont ajoutées au total à la fin de la run
+- la boutique permet d'acheter ou d'equiper :
+  - des oiseaux
+  - des décors
+  - des skins de tuyaux
+- certaines récompenses sont cachées et se débloquent selon la progression
+- un tuyau `rainbow` se débloque avec un meilleur score global eleve
+- entre `100` et `110` points, une présentation spéciale s'active automatiquement
+
+### Sauvegarde
+
+Le jeu sauvegarde automatiquement :
+
+- les meilleurs scores par difficulté
+- le nombre total de pièces
+- les skins débloqués
+- les élèments actuellement équipés
+
+Les données sont stockées dans un fichier `save.txt` via `love.filesystem`.
+
+## Commandes
+
+### Dans les menus
+
+- `Haut / Bas` : naviguer
+- `Entree` ou `Espace` : valider
+- `Echap` : retour
+
+### Pendant la partie
+
+- `Espace` : sauter
+- `Clic gauche` : sauter
+- `P` : pause / reprise
+- `Echap` : revenir au menu
+
+### Dans la boutique
+
+- `Tab` : changer de catégorie
+- `Fleche gauche / droite` : changer de page
+- `1` a `9` : acheter ou équiper un objet visible
+- `Echap` : revenir au menu
+
+### Ecran de fin
+
+- `Entree` ou `Espace` : recommencer
+- `Echap` : revenir au menu
+
+## Installation et lancement
+
+### Prerequis
+
+- `LOVE2D` version `11.x`
+
+Site officiel : `https://love2d.org/`
+
+### Lancer le projet sous Windows
+
+Depuis le dossier du projet :
 
 ```powershell
 cd C:\wamp64\www\Portfolio2\flappy_bird
 "C:\Program Files\LOVE\love.exe" .
 ```
 
-## Commandes
+## Structure du projet
 
-- `Espace` ou clic gauche : sauter
-- `P` : mettre en pause
-- `Entrée` : recommencer après un game over
-- `Échap` : revenir au menu
+### Fichiers principaux
 
-## Organisation du code
+- `main.lua` : point d'entrée LOVE2D, relie les modules du projet et distribue les callbacks `load`, `update`, `draw`, clavier et souris.
+- `config.lua` : coeur du jeu. Contient l'état global, les variables de gameplay, la sauvegarde, les difficultés, la progression, la boutique et les règles de débloquage.
+- `assets.lua` : charge les images, sons, polices, animations et variantes visuelles.
+- `controls.lua` : gère les entrées utilisateur, la navigation dans les menus, les clics, les achats et la boucle d'update en jeu.
+- `screens.lua` : gère tout le rendu visuel des écrans, du HUD, des panneaux, de la boutique et du game over.
+- `conf.lua` : configure la fenêtre et les paramètres de base LOVE2D.
 
-- `main.lua` : point d'entrée du jeu. Ce fichier relie LOVE2D au projet, charge les autres modules au démarrage, puis redirige les événements (`load`, `update`, `draw`, clavier, souris`) vers les bonnes fonctions.
-- `config.lua` : coeur de la logique. Il contient l'état global de la partie, la sauvegarde, les variables de gameplay, la progression du joueur, les achats de boutique, les collisions, les meilleurs scores par difficulté, les vies et le déclenchement des modes spéciaux.
-- `assets.lua` : gestion des ressources visuelles et sonores. Il charge les images, les sons, les polices, découpe les spritesheets, prépare les frames d'animation et construit aussi les variantes de tuyaux.
-- `controls.lua` : gestion des entrées et de la boucle de mise à jour. Il traite les touches selon l'écran actif, le clic souris, les animations, la physique de l'oiseau, le déplacement du décor et l'avancement de la partie.
-- `screens.lua` : rendu de tous les écrans. Il dessine la partie, le HUD, les menus, la boutique, la pause, le game over, ainsi que les aperçus des oiseaux, fonds et tuyaux. Le HUD de jeu affiche maintenant les pièces en haut à gauche avec l'icône des coins.
-- `conf.lua` : configuration technique de LOVE2D. Il définit l'identité du jeu, le comportement de la fenêtre et les paramètres de base avant le lancement.
-- `assets/` : dossier de ressources. Il contient les images et sons utilisés par le jeu, par exemple les oiseaux, les backgrounds, les tuyaux, les pièces, les coeurs et les effets sonores.
+### Ressources
 
-## Rôle de chaque écran du jeu
+Le dossier `assets/` contient :
 
-- `menu` : écran principal avec les choix pour jouer, ouvrir la boutique, réinitialiser la progression ou quitter.
-- `difficulty` : écran de sélection de difficulté avant de lancer une partie, avec affichage du meilleur score de chaque mode.
-- `playing` : écran de jeu principal avec l'oiseau, les tuyaux, les pièces, le fond, le score et les vies.
-- `paused` : pause de la partie en cours, avec possibilité de reprendre ou de revenir au menu.
-- `shop` : boutique où le joueur peut acheter ou équiper des skins d'oiseau, de décor et de tuyaux.
-- `reset_confirm` : écran de confirmation avant d'effacer la progression sauvegardée.
-- `gameover` : écran de fin de partie avec le score final, le meilleur score de la difficulté jouée, les pièces gagnées et un rappel des bonus spéciaux.
+- les oiseaux jouables
+- les fonds du jeu
+- les visuels des menus
+- les aperçus de boutique
+- les sprites de tuyaux
+- les pièces et coeurs
+- les sons du jeu
 
-## Contenu du jeu
+## Ecrans du jeu
 
-- un menu principal
-- trois niveaux de difficulté
-- trois vies
-- des pièces à ramasser
-- une boutique
-- des skins pour l'oiseau, le décor et les tuyaux
-- un meilleur score sauvegardé pour chaque difficulté
-- un compteur de pièces visible en haut à gauche pendant la partie
-- un sol qui défile
+- `menu` : écran principal avec acces au jeu, à la boutique, au reset et à la sortie
+- `difficulty` : choix du niveau de difficulté et affichage des meilleurs scores
+- `playing` : partie en cours
+- `paused` : pause avec reprise rapide
+- `shop` : achat et équipement des skins
+- `reset_confirm` : confirmation de remise a zéro
+- `gameover` : récapitulatif de fin de partie
 
-Le jeu utilise les images présentes dans `assets/`.
+## Logique de progression
+
+- chaque difficulé possède son propre meilleur score
+- la progression cosmetique est persistante
+- les objets cachés ne sont pas affichés comme les objets classiques tant qu'ils ne sont pas débloqués
+- le jeu synchronise les débloquages spéciaux a partir du meilleur score global
+
+## Points techniques interessants
+
+- architecture separée par responsabilité : logique, rendu, assets, contrôles
+- utilisation de tableaux Lua pour les catalogues de skins et d'objets
+- gestion simple mais complète de la sauvegarde texte
+- ajustement progressif de la difficulté pendant la run
+- overlays et interfaces de menu personnalisés
