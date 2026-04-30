@@ -168,108 +168,6 @@ function loadImageRaw(path)
     return image
 end
 
-function loadGridImageWithTransparency(path, columns, rows, keepBlackOutline)
-    if love.filesystem.getInfo(path) == nil then
-        return nil
-    end
-
-    local ok, imageData = pcall(love.image.newImageData, path)
-    if not ok then
-        return nil
-    end
-
-    if keepBlackOutline then
-        makeGridBorderBlackTransparent(imageData, columns, rows)
-    else
-        removeNearBlackPixels(imageData)
-    end
-
-    local image = love.graphics.newImage(imageData)
-    image:setFilter("nearest", "nearest")
-    return image
-end
-
-function findOpaqueBounds(imageData)
-    local width, height = imageData:getDimensions()
-    local minX = width
-    local minY = height
-    local maxX = -1
-    local maxY = -1
-
-    for y = 0, height - 1 do
-        for x = 0, width - 1 do
-            local _, _, _, alpha = imageData:getPixel(x, y)
-            if alpha > 0.02 then
-                if x < minX then minX = x end
-                if y < minY then minY = y end
-                if x > maxX then maxX = x end
-                if y > maxY then maxY = y end
-            end
-        end
-    end
-
-    if maxX < minX or maxY < minY then
-        return nil
-    end
-
-    return {
-        x = minX,
-        y = minY,
-        w = maxX - minX + 1,
-        h = maxY - minY + 1
-    }
-end
-
-function buildButtonQuad(path, side)
-    if love.filesystem.getInfo(path) == nil then
-        return nil, nil
-    end
-
-    local ok, imageData = pcall(love.image.newImageData, path)
-    if not ok then
-        return nil, nil
-    end
-
-    makeBorderBlackTransparent(imageData)
-
-    local width, height = imageData:getDimensions()
-    local startX = 0
-    local endX = width - 1
-    if side == "left" then
-        endX = math.floor(width / 2) - 1
-    elseif side == "right" then
-        startX = math.floor(width / 2)
-    end
-
-    local minX = endX
-    local minY = height - 1
-    local maxX = startX
-    local maxY = 0
-    local found = false
-
-    for y = 0, height - 1 do
-        for x = startX, endX do
-            local _, _, _, alpha = imageData:getPixel(x, y)
-            if alpha > 0.02 then
-                found = true
-                if x < minX then minX = x end
-                if y < minY then minY = y end
-                if x > maxX then maxX = x end
-                if y > maxY then maxY = y end
-            end
-        end
-    end
-
-    if not found then
-        return nil, nil
-    end
-
-    local image = love.graphics.newImage(imageData)
-    image:setFilter("nearest", "nearest")
-    local quad = love.graphics.newQuad(minX, minY, maxX - minX + 1, maxY - minY + 1, width, height)
-    return image, quad
-end
-
 function buildGridFrameImages(path, columns, rows, frameOrder, keepBlackOutline)
     if love.filesystem.getInfo(path) == nil then
         return nil, nil, nil
@@ -797,23 +695,39 @@ function getPickupSpriteVisual(pickupTypeKey)
 end
 
 function getShopBackgroundVisual(section, page)
-    if shopBackgroundSprites ~= nil and shopBackgroundSprites[section] ~= nil then
-        local entry = shopBackgroundSprites[section]
-        if type(entry) == "table" then
-            local index = page or 1
-            if index < 1 then
-                index = 1
-            elseif index > #entry then
-                index = #entry
-            end
-
-            return entry[index] or entry[1] or shopBackgroundSprite
-        end
-
-        return entry
+    if shopBackgroundSprites == nil or shopBackgroundSprites[section] == nil then
+        return nil
     end
 
-    return shopBackgroundSprite
+    local entry = shopBackgroundSprites[section]
+    local index = page or 1
+    if index < 1 then
+        index = 1
+    elseif index > #entry then
+        index = #entry
+    end
+
+    return entry[index] or entry[1]
+end
+
+function getDifficultyBackgroundVisual(mode)
+    if difficultyBackgroundSprites ~= nil then
+        return difficultyBackgroundSprites[mode]
+    end
+
+    return nil
+end
+
+function getGameOverBackgroundVisual(mode)
+    if gameOverBackgroundSprites ~= nil then
+        return gameOverBackgroundSprites[mode]
+    end
+
+    return nil
+end
+
+function getResetBackgroundVisual()
+    return resetBackgroundSprite
 end
 
 -- Charge toutes les ressources du jeu :
@@ -887,16 +801,12 @@ function initializeAssets()
     end
 
     -- On garde aussi une référence simple vers l'oiseau de base.
-    birdSprite = birdSprites[1]
     if birdSpriteData[1] ~= nil then
         birdSpriteFrames = birdSpriteData[1].frames
     end
 
     -- Pièce ramassable.
-    coinSprites = {}
     coinAnimationFramesByType = {}
-    coinFrameWidth = 1
-    coinFrameHeight = 1
 
     for i = 1, #coinTypes do
         local coinType = coinTypes[i]
@@ -906,7 +816,6 @@ function initializeAssets()
         frames, frameWidths, frameHeights = buildGridFrameImages(coinType.file, 2, 2, { 1, 2, 3, 4 }, true)
 
         if frames ~= nil and #frames > 0 then
-            coinSprites[coinType.key] = frames[1]
             coinAnimationFramesByType[coinType.key] = {
                 frames = frames,
                 frameWidth = frameWidths[1],
@@ -915,10 +824,6 @@ function initializeAssets()
                 frameHeights = frameHeights
             }
 
-            if coinFrameWidth == 1 and coinFrameHeight == 1 then
-                coinFrameWidth = frameWidths[1]
-                coinFrameHeight = frameHeights[1]
-            end
         end
     end
 
@@ -981,8 +886,51 @@ function initializeAssets()
         end
     end
 
+    difficultyBackgroundSprites = {}
+    local difficultyBackgroundFiles = {
+        easy = "assets/background_difficulty/Difficulty_Facile.png",
+        normal = "assets/background_difficulty/Difficulty_Moyen.png",
+        hard = "assets/background_difficulty/Difficulty_Difficile.png"
+    }
+
+    for key, path in pairs(difficultyBackgroundFiles) do
+        if love.filesystem.getInfo(path) ~= nil then
+            local ok, image = pcall(love.graphics.newImage, path)
+            if ok and image ~= nil then
+                image:setFilter("nearest", "nearest")
+                difficultyBackgroundSprites[key] = image
+            end
+        end
+    end
+
+    gameOverBackgroundSprites = {}
+    local gameOverBackgroundFiles = {
+        easy = "assets/background_game_over/Easy.png",
+        normal = "assets/background_game_over/Moyen.png",
+        hard = "assets/background_game_over/Difficult.png"
+    }
+
+    for key, path in pairs(gameOverBackgroundFiles) do
+        if love.filesystem.getInfo(path) ~= nil then
+            local ok, image = pcall(love.graphics.newImage, path)
+            if ok and image ~= nil then
+                image:setFilter("nearest", "nearest")
+                gameOverBackgroundSprites[key] = image
+            end
+        end
+    end
+
+    resetBackgroundSprite = nil
+    local resetBackgroundPath = "assets/Reset_background.png"
+    if love.filesystem.getInfo(resetBackgroundPath) ~= nil then
+        local ok, image = pcall(love.graphics.newImage, resetBackgroundPath)
+        if ok and image ~= nil then
+            image:setFilter("nearest", "nearest")
+            resetBackgroundSprite = image
+        end
+    end
+
     menuButtonSprites = {}
-    menuButtonLoadErrors = {}
     local menuButtonFiles = {
         play = "assets/buttons_menu/play.png",
         shop = "assets/buttons_menu/shop.png",
@@ -992,23 +940,10 @@ function initializeAssets()
 
     for key, path in pairs(menuButtonFiles) do
         local image = loadImageWithTransparency(path, true)
-        if image ~= nil then
-            menuButtonSprites[key] = image
-        else
-            menuButtonLoadErrors[key] = "fichier introuvable ou illisible: " .. path
-        end
+        menuButtonSprites[key] = image
     end
 
-    shopBackgroundSprite = nil
     shopBackgroundSprites = {}
-    local shopBackgroundPath = "assets/background_screen/shop_background.png"
-    if love.filesystem.getInfo(shopBackgroundPath) ~= nil then
-        local ok, image = pcall(love.graphics.newImage, shopBackgroundPath)
-        if ok then
-            image:setFilter("linear", "linear")
-            shopBackgroundSprite = image
-        end
-    end
 
     local shopBackgroundFiles = {
         bird = {
@@ -1047,12 +982,7 @@ function initializeAssets()
         end
     end
 
-    shopButtonSprites = {}
-    shopButtonQuads = {}
-    shopButtonLoadErrors = {}
-
     shopSkinStateSprites = {}
-    shopSkinStateLoadErrors = {}
     local shopSkinStateFiles = {
         lock = "assets/skin_shop/lock_skin.png",
         unlock = "assets/skin_shop/unlock_skin.png",
@@ -1065,11 +995,7 @@ function initializeAssets()
             if ok and image ~= nil then
                 image:setFilter("nearest", "nearest")
                 shopSkinStateSprites[key] = image
-            else
-                shopSkinStateLoadErrors[key] = tostring(image)
             end
-        else
-            shopSkinStateLoadErrors[key] = "fichier introuvable: " .. path
         end
     end
 

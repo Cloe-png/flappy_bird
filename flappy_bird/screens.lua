@@ -102,31 +102,27 @@ function getBirdScaleMultiplier(index, isPreview)
     return skin.drawScale or 1
 end
 
-function drawBirdPreview(index, x, y, scaleMultiplier)
+function drawBirdPreview(index, x, y, w, h, scaleMultiplier)
     local image, quad, frameWidth, frameHeight = getBirdSpriteVisual(index)
     local previewScaleMultiplier = scaleMultiplier or 1
 
-    if image ~= nil then
-        local scale = math.min(44 / frameWidth, 32 / frameHeight) * getBirdScaleMultiplier(index, true) * previewScaleMultiplier
-        drawSprite(image, quad, x + 22 * previewScaleMultiplier, y + 16 * previewScaleMultiplier, 0, scale, scale, frameWidth / 2, frameHeight / 2)
+    if image == nil then
         return
     end
 
-    love.graphics.setColor(1, 0.82, 0.18)
-    love.graphics.rectangle("fill", x, y, 44 * previewScaleMultiplier, 32 * previewScaleMultiplier)
+    local scale = math.min(w / frameWidth, h / frameHeight) * getBirdScaleMultiplier(index, true) * previewScaleMultiplier
+    drawSprite(image, quad, x + w / 2, y + h / 2, 0, scale, scale, frameWidth / 2, frameHeight / 2)
 end
 
 function drawBackgroundPreview(index, x, y, w, h)
     local image = backgroundSprites[index]
 
-    if image ~= nil then
-        love.graphics.setColor(1, 1, 1)
-        love.graphics.draw(image, x, y, 0, w / image:getWidth(), h / image:getHeight())
+    if image == nil then
         return
     end
 
-    love.graphics.setColor(0.45, 0.76, 1)
-    love.graphics.rectangle("fill", x, y, w, h)
+    love.graphics.setColor(1, 1, 1)
+    love.graphics.draw(image, x, y, 0, w / image:getWidth(), h / image:getHeight())
 end
 
 function drawPipePreview(index, x, y, scaleMultiplier)
@@ -220,7 +216,7 @@ function drawPipes()
     end
 end
 
--- Dessine les pieces ramassables.
+-- Dessine les pièces ramassables.
 function drawCoins()
     for i = 1, #coinsOnMap do
         local item = coinsOnMap[i]
@@ -380,52 +376,37 @@ function drawMenu()
         selectedButtonKey = "out"
     end
 
-    if menuBackgroundSprite ~= nil then
-        love.graphics.setColor(1, 1, 1, 1)
-        love.graphics.draw(
-            menuBackgroundSprite,
-            panelX,
-            panelY,
-            0,
-            panelWidth / menuBackgroundSprite:getWidth(),
-            panelHeight / menuBackgroundSprite:getHeight()
-        )
-    else
-        love.graphics.setColor(0, 0, 0, 0.24)
-        love.graphics.rectangle("fill", panelX + 10, panelY + 10, panelWidth, panelHeight, 18, 18)
-        love.graphics.setColor(0.86, 0.78, 0.62, 0.98)
-        love.graphics.rectangle("fill", panelX, panelY, panelWidth, panelHeight, 18, 18)
-        love.graphics.setColor(0.64, 0.56, 0.43, 0.95)
-        love.graphics.rectangle("line", panelX, panelY, panelWidth, panelHeight, 18, 18)
-    end
+    love.graphics.setColor(1, 1, 1, 1)
+    love.graphics.draw(
+        menuBackgroundSprite,
+        panelX,
+        panelY,
+        0,
+        panelWidth / menuBackgroundSprite:getWidth(),
+        panelHeight / menuBackgroundSprite:getHeight()
+    )
 
     local selectedButton = menuButtonSprites[selectedButtonKey]
-    if selectedButton ~= nil then
-        local buttonWidth = math.min(panelWidth - 360, selectedButton:getWidth() * 0.62)
-        local buttonScale = buttonWidth / selectedButton:getWidth()
-        local buttonHeight = selectedButton:getHeight() * buttonScale
-        local buttonX = panelX + (panelWidth - buttonWidth) / 2
+    if selectedButton == nil then
+        return
+    end
 
-        love.graphics.setColor(1, 1, 1)
-        love.graphics.draw(selectedButton, buttonX, buttonY, 0, buttonScale, buttonScale)
+    local buttonWidth = math.min(panelWidth - 360, selectedButton:getWidth() * 0.62)
+    local buttonScale = buttonWidth / selectedButton:getWidth()
+    local buttonHeight = selectedButton:getHeight() * buttonScale
+    local buttonX = panelX + (panelWidth - buttonWidth) / 2
 
-        for i = 1, #buttonLayout do
-            local item = buttonLayout[i]
-            menuButtonBounds[i] = {
-                x = buttonX + item.x * buttonWidth,
-                y = buttonY + item.y * buttonHeight,
-                w = item.w * buttonWidth,
-                h = item.h * buttonHeight
-            }
-        end
-    else
-        love.graphics.setFont(fontSmall)
-        love.graphics.setColor(1, 0.82, 0.82)
-        love.graphics.printf("Bouton du menu introuvable", 0, buttonY + 52, WINDOW_WIDTH, "center")
-        if menuButtonLoadErrors ~= nil and menuButtonLoadErrors[selectedButtonKey] ~= nil then
-            love.graphics.setColor(1, 0.88, 0.88)
-            love.graphics.printf(menuButtonLoadErrors[selectedButtonKey], panelX + 24, buttonY + 84, panelWidth - 48, "center")
-        end
+    love.graphics.setColor(1, 1, 1)
+    love.graphics.draw(selectedButton, buttonX, buttonY, 0, buttonScale, buttonScale)
+
+    for i = 1, #buttonLayout do
+        local item = buttonLayout[i]
+        menuButtonBounds[i] = {
+            x = buttonX + item.x * buttonWidth,
+            y = buttonY + item.y * buttonHeight,
+            w = item.w * buttonWidth,
+            h = item.h * buttonHeight
+        }
     end
 
     love.graphics.setFont(fontSmall)
@@ -436,15 +417,35 @@ end
 function drawDifficultyMenu()
     drawBackground()
 
+    local selectedMode = difficultyOptions[difficultyIndex] and difficultyOptions[difficultyIndex].key or "normal"
+    local difficultyBackground = getDifficultyBackgroundVisual(selectedMode)
     local panelWidth = 760
     local panelHeight = 360
+    if difficultyBackground ~= nil then
+        panelWidth = difficultyBackground:getWidth()
+        panelHeight = difficultyBackground:getHeight()
+    end
     local panelX = (WINDOW_WIDTH - panelWidth) / 2
     local panelY = WINDOW_HEIGHT * 0.18
+    if difficultyBackground ~= nil then
+        panelY = (WINDOW_HEIGHT - panelHeight) / 2
+    end
     local titleY = panelY + 28
     local firstItemY = panelY + 102
     local helpY = panelY + 250
 
-    if menuBackgroundSprite ~= nil then
+    if difficultyBackground ~= nil then
+        love.graphics.setColor(1, 1, 1, 1)
+        love.graphics.draw(
+            difficultyBackground,
+            panelX,
+            panelY,
+            0,
+            panelWidth / difficultyBackground:getWidth(),
+            panelHeight / difficultyBackground:getHeight()
+        )
+        return
+    elseif menuBackgroundSprite ~= nil then
         love.graphics.setColor(1, 1, 1, 1)
         love.graphics.draw(
             menuBackgroundSprite,
@@ -504,10 +505,28 @@ end
 function drawResetConfirm()
     drawBackground()
 
+    local resetBackground = getResetBackgroundVisual()
     local boxWidth = 620
     local boxHeight = 240
+    if resetBackground ~= nil then
+        boxWidth = resetBackground:getWidth()
+        boxHeight = resetBackground:getHeight()
+    end
     local boxX = (WINDOW_WIDTH - boxWidth) / 2
     local boxY = (WINDOW_HEIGHT - boxHeight) / 2
+
+    if resetBackground ~= nil then
+        love.graphics.setColor(1, 1, 1, 1)
+        love.graphics.draw(
+            resetBackground,
+            boxX,
+            boxY,
+            0,
+            boxWidth / resetBackground:getWidth(),
+            boxHeight / resetBackground:getHeight()
+        )
+        return
+    end
 
     drawSoftPanel(boxX, boxY, boxWidth, boxHeight, { 1, 0.30, 0.30, 0.85 })
 
@@ -529,57 +548,7 @@ end
 -- BOUTIQUE
 -- -------------------------------------------------------------------
 
-function getShopAccent(category)
-    if category == "bird" then
-        return 1, 0.66, 0.24
-    elseif category == "background" then
-        return 0.34, 0.82, 0.74
-    end
-
-    return 0.44, 0.76, 1
-end
-
 -- Retourne le texte principal et secondaire d'une carte boutique.
-function getShopStatus(item, unlocked, selected)
-    -- Le rainbow n'est jamais achete manuellement.
-    if item.key == "rainbow" then
-        if getGlobalBestScore() >= 100 then
-            return "Spécial", "S'active automatiquement à 100 points"
-        end
-
-        return "Vitrine fermée", "Atteins 100 points pour le voir en jeu"
-    end
-
-    if selected then
-        return "Équipé", "Prêt à jouer"
-    end
-
-    if unlocked then
-        return "Disponible", "Touche " .. tostring(item.shopIndex) .. " pour équiper"
-    end
-
-    return "À vendre", tostring(item.cost) .. " pièces"
-end
-
-function getShopShortcutLabel(item)
-    if item.key == "rainbow" then
-        return "SPECIAL"
-    end
-
-    return "TOUCHE " .. tostring(item.shopIndex)
-end
-
-function getShopFooterLabel(item, unlocked, selected)
-    if item.key == "rainbow" then
-        return "Auto 100 pts"
-    elseif selected then
-        return "Equipe"
-    elseif unlocked then
-        return "Choisir"
-    end
-
-    return tostring(item.cost) .. " pièces"
-end
 
 function getShopTopBadgeLabel(item, unlocked, selected)
     if item.key == "rainbow" then
@@ -594,7 +563,7 @@ function getShopTopBadgeLabel(item, unlocked, selected)
         return nil
     end
 
-    return tostring(item.cost) .. " pieces"
+    return tostring(item.cost) .. " pièces"
 end
 
 function getShopStateSpriteKey(item, unlocked, selected)
@@ -611,7 +580,6 @@ end
 
 -- Dessine une carte produit.
 function drawShopCard(category, itemIndex, item, unlocked, selected, x, y, w, h)
-    local accentR, accentG, accentB = getShopAccent(category)
     local stateSpriteKey = getShopStateSpriteKey(item, unlocked, selected)
     local stateSprite = shopSkinStateSprites[stateSpriteKey]
     local topBadgeLabel = getShopTopBadgeLabel(item, unlocked, selected)
@@ -623,30 +591,22 @@ function drawShopCard(category, itemIndex, item, unlocked, selected, x, y, w, h)
     love.graphics.setColor(0, 0, 0, 0.16)
     love.graphics.rectangle("fill", x + 8, y + 10, w, h, 10, 10)
 
-    if stateSprite ~= nil then
-        love.graphics.setColor(1, 1, 1, 1)
-        love.graphics.draw(stateSprite, x, y, 0, w / stateSprite:getWidth(), h / stateSprite:getHeight())
-    else
-        if selected then
-            love.graphics.setColor(accentR, accentG, accentB, 0.12)
-            love.graphics.rectangle("fill", x - 4, y - 4, w + 8, h + 8, 12, 12)
-        end
-
-        love.graphics.setColor(0.93, 0.95, 1.0, 0.98)
-        love.graphics.rectangle("fill", x, y, w, h, 10, 10)
-        love.graphics.setColor(0.70, 0.76, 0.90, 1)
-        love.graphics.rectangle("line", x, y, w, h, 10, 10)
+    if stateSprite == nil then
+        return
     end
 
-    if stateSprite ~= nil and topBadgeLabel ~= nil then
+    love.graphics.setColor(1, 1, 1, 1)
+    love.graphics.draw(stateSprite, x, y, 0, w / stateSprite:getWidth(), h / stateSprite:getHeight())
+
+    if topBadgeLabel ~= nil then
         love.graphics.setFont(fontSmall)
         love.graphics.setColor(0.12, 0.12, 0.12, 0.98)
-        love.graphics.printf(topBadgeLabel, x + w * 0.24, y + h * 0.074, w * 0.52, "center")
+        love.graphics.printf(topBadgeLabel, x + w * 0.255, y + h * 0.095, w * 0.52, "center")
     end
 
-    -- La miniature depend de ce qu'on vend.
+    -- La miniature dépend de ce qu'on vend.
     if category == "bird" then
-        drawBirdPreview(itemIndex, x + (w - 50) / 2, y + h * 0.40, 1.05)
+        drawBirdPreview(itemIndex, x + w * 0.17, y + h * 0.32, w * 0.66, h * 0.36, 1.10)
     elseif category == "background" then
         love.graphics.setScissor(previewX, previewY, previewW, previewH)
         drawBackgroundPreview(itemIndex, previewX, previewY, previewW, previewH)
@@ -667,10 +627,6 @@ function drawShopShelf(category, list, unlockedList, selected, visibleIndices, x
     end
 end
 
-function drawShopArrowButton(x, y, w, h, direction, enabled, accentR, accentG, accentB)
-    return
-end
-
 function drawShopBalanceBadge(panelX, panelY, panelWidth, panelHeight)
     local labelX = panelX + panelWidth * 0.08
     local labelY = panelY + panelHeight * 0.87
@@ -679,7 +635,7 @@ function drawShopBalanceBadge(panelX, panelY, panelWidth, panelHeight)
 
     love.graphics.setFont(fontSmall)
     love.graphics.setColor(0.12, 0.12, 0.12, 0.98)
-    love.graphics.printf(tostring(coins), labelX + labelW * 0.50, labelY + labelH * 0.06, labelW * 0.22, "center")
+    love.graphics.printf(tostring(coins), labelX + labelW * 0.50, labelY - labelH * 0.01, labelW * 0.22, "center")
 end
 
 -- Regroupe les données du rayon actif pour simplifier drawShop.
@@ -693,23 +649,11 @@ function getActiveShopData()
     return "Oiseaux", birdSkins, unlockedBirds, selectedBird
 end
 
-function countVisibleShopItems(list)
-    local count = 0
-
-    for i = 1, #list do
-        if not list[i].hidden then
-            count = count + 1
-        end
-    end
-
-    return count
-end
 
 function drawShop()
     drawBackground()
 
     local _, activeList, activeUnlocked, activeSelected = getActiveShopData()
-    local accentR, accentG, accentB = getShopAccent(shopSection)
     local visibleIndices, currentPage, pageCount = getShopPageIndices(shopSection, activeList)
     local activeShopBackground = getShopBackgroundVisual(shopSection, currentPage)
     local basePanelWidth = 1092
@@ -728,24 +672,19 @@ function drawShop()
     local cardH = cardW
     local cardGap = math.floor(panelWidth * 0.05)
 
-    if activeShopBackground ~= nil then
-        love.graphics.setColor(1, 1, 1, 1)
-        love.graphics.draw(
-            activeShopBackground,
-            panelX,
-            panelY,
-            0,
-            panelWidth / activeShopBackground:getWidth(),
-            panelHeight / activeShopBackground:getHeight()
-        )
-    else
-        love.graphics.setColor(0, 0, 0, 0.24)
-        love.graphics.rectangle("fill", panelX + 10, panelY + 10, panelWidth, panelHeight, 18, 18)
-        love.graphics.setColor(0.86, 0.78, 0.62, 0.98)
-        love.graphics.rectangle("fill", panelX, panelY, panelWidth, panelHeight, 18, 18)
-        love.graphics.setColor(0.64, 0.56, 0.43, 0.95)
-        love.graphics.rectangle("line", panelX, panelY, panelWidth, panelHeight, 18, 18)
+    if activeShopBackground == nil then
+        return
     end
+
+    love.graphics.setColor(1, 1, 1, 1)
+    love.graphics.draw(
+        activeShopBackground,
+        panelX,
+        panelY,
+        0,
+        panelWidth / activeShopBackground:getWidth(),
+        panelHeight / activeShopBackground:getHeight()
+    )
 
     local visibleItemCount = #visibleIndices
     local rowWidth = (visibleItemCount * cardW) + math.max(0, visibleItemCount - 1) * cardGap
@@ -753,9 +692,6 @@ function drawShop()
     local arrowW = math.floor(panelWidth * 0.145)
     local arrowH = math.floor(panelHeight * 0.235)
     local arrowY = panelY + math.floor(panelHeight * 0.525)
-    local leftEnabled = currentPage > 1
-    local rightEnabled = currentPage < pageCount
-
     shopArrowBounds.left = nil
     shopArrowBounds.right = nil
 
@@ -766,11 +702,6 @@ function drawShop()
 
     drawShopBalanceBadge(panelX, panelY, panelWidth, panelHeight)
 
-    if pageCount > 1 then
-        drawShopArrowButton(shopArrowBounds.left.x, shopArrowBounds.left.y, arrowW, arrowH, "left", leftEnabled, accentR, accentG, accentB)
-        drawShopArrowButton(shopArrowBounds.right.x, shopArrowBounds.right.y, arrowW, arrowH, "right", rightEnabled, accentR, accentG, accentB)
-    end
-
     drawShopShelf(shopSection, activeList, activeUnlocked, activeSelected, visibleIndices, rowX, panelY + math.floor(panelHeight * 0.33), cardW, cardH, cardGap)
 end
 
@@ -779,66 +710,6 @@ end
 -- -------------------------------------------------------------------
 
 -- Écran de fin de partie plus lisible avec récapitulatif.
-function drawGameOver()
-    -- On garde la partie visible dessous, puis on pose un panneau sombre dessus.
-    drawBackground()
-    drawPipes()
-    drawCoins()
-    drawBird()
-
-    love.graphics.setColor(0, 0, 0, 0.52)
-    love.graphics.rectangle("fill", 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT)
-
-    local boxWidth = 760
-    local boxHeight = 360
-    local boxX = (WINDOW_WIDTH - boxWidth) / 2
-    local boxY = (WINDOW_HEIGHT - boxHeight) / 2
-
-    drawSoftPanel(boxX, boxY, boxWidth, boxHeight, { 1, 0.35, 0.30, 0.90 })
-
-    love.graphics.setColor(1, 0.34, 0.30, 0.16)
-    love.graphics.rectangle("fill", boxX + 18, boxY + 18, boxWidth - 36, 72, 18, 18)
-
-    love.graphics.setFont(fontTitle)
-    love.graphics.setColor(1, 1, 1)
-    love.graphics.printf("Game Over", boxX, boxY + 28, boxWidth, "center")
-
-    love.graphics.setFont(fontUI)
-    love.graphics.setColor(1, 0.92, 0.25)
-    love.graphics.printf("La course est terminée", boxX, boxY + 90, boxWidth, "center")
-
-    local cards = {
-        { title = "Score final", value = tostring(score), x = boxX + 34 },
-        { title = "Meilleur score", value = tostring(getBestScore(difficultyMode)), x = boxX + 218 },
-        { title = "Pièces gagnées", value = tostring(coinsRun), x = boxX + 402 },
-        { title = "Mode", value = getDifficultyLabel(difficultyMode), x = boxX + 586 }
-    }
-
-    for i = 1, #cards do
-        local item = cards[i]
-        drawSoftPanel(item.x, boxY + 138, 140, 104, { 1, 1, 1, 0.12 })
-        love.graphics.setFont(fontSmall)
-        love.graphics.setColor(0.85, 0.90, 1)
-        love.graphics.printf(item.title, item.x, boxY + 154, 140, "center")
-        love.graphics.setFont(fontUI)
-        love.graphics.setColor(1, 1, 1)
-        love.graphics.printf(item.value, item.x, boxY + 188, 140, "center")
-    end
-
-    local rainbowText = "Le tuyau rainbow s'active automatiquement à 100 points."
-    if score >= 100 then
-        rainbowText = "Le tuyau rainbow s'est activé pendant cette partie."
-    elseif getGlobalBestScore() >= 100 then
-        rainbowText = "Tu as déjà atteint 100 points au moins une fois."
-    end
-
-    love.graphics.setFont(fontSmall)
-    love.graphics.setColor(0.94, 0.88, 1)
-    love.graphics.printf(rainbowText, boxX + 34, boxY + 266, boxWidth - 68, "center")
-
-    love.graphics.setColor(1, 1, 1)
-    love.graphics.printf("Entrée = recommencer   Échap = menu", boxX, boxY + 310, boxWidth, "center")
-end
 
 function drawGameOverPanel()
     drawBackground()
@@ -846,13 +717,36 @@ function drawGameOverPanel()
     drawCoins()
     drawBird()
 
+    local gameOverBackground = getGameOverBackgroundVisual(difficultyMode)
+    local boxWidth = 840
+    local boxHeight = 430
+    if gameOverBackground ~= nil then
+        boxWidth = gameOverBackground:getWidth()
+        boxHeight = gameOverBackground:getHeight()
+    end
+    local boxX = (WINDOW_WIDTH - boxWidth) / 2
+    local boxY = (WINDOW_HEIGHT - boxHeight) / 2
+
     love.graphics.setColor(0, 0, 0, 0.62)
     love.graphics.rectangle("fill", 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT)
 
-    local boxWidth = 840
-    local boxHeight = 430
-    local boxX = (WINDOW_WIDTH - boxWidth) / 2
-    local boxY = (WINDOW_HEIGHT - boxHeight) / 2
+    if gameOverBackground ~= nil then
+        love.graphics.setColor(1, 1, 1, 1)
+        love.graphics.draw(
+            gameOverBackground,
+            boxX,
+            boxY,
+            0,
+            boxWidth / gameOverBackground:getWidth(),
+            boxHeight / gameOverBackground:getHeight()
+        )
+
+        love.graphics.setFont(fontUI)
+        love.graphics.setColor(0.08, 0.08, 0.08, 1)
+        love.graphics.printf(tostring(coinsRun), boxX + boxWidth * 0.08, boxY + boxHeight * 0.53, boxWidth * 0.40, "center")
+        love.graphics.printf(tostring(score), boxX + boxWidth * 0.35, boxY + boxHeight * 0.53, boxWidth * 0.30, "center")
+        return
+    end
 
     drawSoftPanel(boxX, boxY, boxWidth, boxHeight, { 1, 0.35, 0.30, 0.90 })
 

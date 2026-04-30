@@ -60,7 +60,6 @@ shopArrowBounds = {
 menuButtonBounds = {}
 
 -- Références de sprites chargées à l'exécution.
-birdSprite = nil
 birdSprites = {}
 birdSpriteData = {}
 birdSpriteFrames = {}
@@ -70,17 +69,13 @@ birdSpriteFrameDuration = 1 / 7
 
 backgroundSprites = {}
 menuBackgroundSprite = nil
+difficultyBackgroundSprites = {}
+gameOverBackgroundSprites = {}
+resetBackgroundSprite = nil
 menuButtonSprites = {}
-menuButtonLoadErrors = {}
-shopBackgroundSprite = nil
 shopBackgroundSprites = {}
-shopButtonSprites = {}
-shopButtonQuads = {}
-shopButtonLoadErrors = {}
 shopSkinStateSprites = {}
-shopSkinStateLoadErrors = {}
 
-coinSprites = {}
 coinAnimationFramesByType = {}
 coinSpriteFrameIndex = 1
 coinSpriteFrameTimer = 0
@@ -100,8 +95,6 @@ rainbowPipeIndex = nil
 stars = {}
 clouds = {}
 
-coinFrameWidth = 1
-coinFrameHeight = 1
 heartFrameWidth = 1
 heartFrameHeight = 1
 
@@ -127,10 +120,10 @@ difficultyOptions = {
 
 birdSkins = {
     { key = "bird", name = "Défaut", cost = 0, file = "assets/birds/bird.png", columns = 2, rows = 2, frameOrder = { 1, 2, 3 }, drawScale = 1.0, previewScale = 1.0 },
-    { key = "cat", name = "Chat", cost = 55, file = "assets/birds/cat.png", columns = 2, rows = 2, frameOrder = { 1, 2, 3, 4 }, drawScale = 1.18, previewScale = 1.12 },
-    { key = "mario_tanuki", name = "Mario Tanuki", cost = 110, file = "assets/birds/mario_tanuki.png", columns = 2, rows = 2, frameOrder = { 1, 2, 3 }, drawScale = 1.0, previewScale = 1.0 },
-    { key = "mario_wonder", name = "Mario Wonder", cost = 160, file = "assets/birds/mario_wonder.png", columns = 3, rows = 4, frameOrder = { 1, 2, 3, 4, 5, 6 }, drawScale = 1.0, previewScale = 1.0 },
-    { key = "nyancat", name = "Nyan Cat", cost = 0, file = "assets/birds/nyancat.png", columns = 2, rows = 2, frameOrder = { 1, 2, 3 }, hidden = true, drawScale = 1.35, previewScale = 1.18 }
+    { key = "cat", name = "Chat", cost = 55, file = "assets/birds/cat.png", columns = 2, rows = 2, frameOrder = { 1, 2, 3, 4 }, drawScale = 1.18, previewScale = 1.28 },
+    { key = "mario_tanuki", name = "Mario Tanuki", cost = 110, file = "assets/birds/mario_tanuki.png", columns = 2, rows = 2, frameOrder = { 1, 2, 3 }, drawScale = 1.0, previewScale = 1.18 },
+    { key = "mario_wonder", name = "Mario Wonder", cost = 160, file = "assets/birds/mario_wonder.png", columns = 3, rows = 4, frameOrder = { 1, 2, 3, 4, 5, 6 }, drawScale = 1.0, previewScale = 1.2 },
+    { key = "nyancat", name = "Nyan Cat", cost = 0, file = "assets/birds/nyancat.png", columns = 2, rows = 2, frameOrder = { 1, 2, 3 }, hidden = true, drawScale = 1.35, previewScale = 1.34 }
 }
 
 backgroundSkins = {
